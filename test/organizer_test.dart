@@ -43,7 +43,7 @@ void main() {
   test('replaces only exact matching bases and preserves originals', () async {
     final model = await Directory(p.join(root.path, '7301 - Hero')).create();
     final original = File(p.join(model.path, 'Base 01 - 25_5mm - Medium - 1 Inch.stl'));
-    final supported = File(p.join(bases.path, p.basename(original.path)));
+    final supported = File(p.join(bases.path, '_' + p.basename(original.path)));
     await original.writeAsString('unsupported');
     await supported.writeAsString('supported');
     final result = await organizer.scan(root.path, bases.path,
@@ -52,7 +52,8 @@ void main() {
     expect(result.changes.single.operation, Operation.replace);
     final execution = await organizer.execute(root.path, result.changes);
     expect(execution.errors, isEmpty);
-    expect(await original.readAsString(), 'supported');
+    expect(await original.exists(), false);
+    expect(await File(p.join(model.path, p.basename(supported.path))).readAsString(), 'supported');
     expect(await File(p.join(execution.backupPath!, '7301 - Hero',
         p.basename(original.path))).readAsString(), 'unsupported');
   });
@@ -73,6 +74,19 @@ void main() {
         rename: true, replace: false, remove: false);
     expect(result.changes.length, 1);
     expect(p.basename(result.changes.single.file.path), 'Hero.stl');
+  });
+
+  test('refuses replacing when supported base destination already exists', () async {
+    final model = await Directory(p.join(root.path, '7302 - Hero')).create();
+    final old = File(p.join(model.path, 'Base 01.stl'));
+    final existing = File(p.join(model.path, '_Base 01.stl'));
+    await old.writeAsString('original');
+    await existing.writeAsString('already supported');
+    await File(p.join(bases.path, '_Base 01.stl')).writeAsString('new');
+    final result = await organizer.scan(root.path, bases.path,
+        rename: false, replace: true, remove: false);
+    expect(result.changes.where((e) => e.operation == Operation.replace), isEmpty);
+    expect(result.warnings, isNotEmpty);
   });
 
   test('does not overwrite an existing rename destination', () async {
