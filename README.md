@@ -5,7 +5,7 @@ Aplicativo Flutter para Windows para organizar coleções de STL da Epic Miniatu
 ## Recursos
 - Varredura recursiva de arquivos STL em uma pasta escolhida.
 - Prefixa `_` no nome de STLs elegíveis (sem duplicar prefixos).
-- Move arquivos contendo `[One Piece]` para uma pasta de backup recuperável.
+- Move arquivos cujo nome começa com `[One Piece]` para uma pasta de backup recuperável.
 - Substitui bases STL locais por versões da pasta `Bases` **somente quando os nomes são exatamente iguais**; casos sem correspondência ficam intactos.
 - Prévia das alterações e seleção de cada operação antes de executar.
 - Backups de todos os arquivos substituídos ou removidos, em `.epic_pattern_backups`.
@@ -34,3 +34,12 @@ Selecione a pasta da coleção (por exemplo `D:\Epic Miniatures`) e escolha a pa
 A prévia é obrigatória. Ao executar, o programa move arquivos substituídos e arquivos `[One Piece]` para um diretório de backup, permitindo recuperação manual. Os arquivos de backup não são escaneados. A renomeação para quando o nome final já existe, sem sobrescrevê-lo.
 
 **Observação:** esta primeira versão implementa a lógica de correspondência de bases por nome; ajuste as regras quando houver exemplos reais das bases sem e com suporte.
+
+## Regras confirmadas
+
+1. A pasta selecionada de bases prontas contém os STLs **com suporte** e é usada como fonte, sem ser alterada pelo processo.
+2. Em cada pasta da coleção, uma base cujo nome é **exatamente igual** (ignorando maiúsculas/minúsculas) ao de uma base pronta pode ser substituída, com backup do original. Bases sem correspondência não são substituídas. Se o modelo usar nomes diferentes para as versões, será necessário configurar um mapeamento adicional.
+3. Todo arquivo `.stl` da coleção que não começa com `_` recebe o prefixo `_`, salvo quando selecionado para substituição ou remoção na mesma execução.
+4. Somente arquivos cujo nome começa com `[One Piece]` (sem diferenciar maiúsculas/minúsculas) são movidos para backup e retirados da coleção. Uma ocorrência no meio do nome não aciona remoção.
+
+Execute primeiro com uma **cópia** da coleção: o aplicativo ainda está em desenvolvimento e não foi validado em um ambiente Windows real.
