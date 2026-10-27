@@ -6,7 +6,7 @@ import 'package:epic_pattern/organizer.dart';
 void main() {
   late Directory root;
   late Directory bases;
-  const organizer = Organizer();
+  final organizer = Organizer();
 
   setUp(() async {
     root = await Directory.systemTemp.createTemp('epic_pattern_test_');
