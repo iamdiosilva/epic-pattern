@@ -57,6 +57,24 @@ void main() {
         p.basename(original.path))).readAsString(), 'unsupported');
   });
 
+  test('removes only names beginning with [One Piece]', () async {
+    await File(p.join(root.path, '[One Piece] Fence.stl')).writeAsString('a');
+    await File(p.join(root.path, 'Fence [One Piece].stl')).writeAsString('b');
+    final result = await organizer.scan(root.path, bases.path,
+        rename: false, replace: false, remove: true);
+    expect(result.changes.length, 1);
+    expect(p.basename(result.changes.single.file.path), '[One Piece] Fence.stl');
+  });
+
+  test('never renames STL files inside the source bases folder', () async {
+    await File(p.join(bases.path, 'Base 01.stl')).writeAsString('supported');
+    await File(p.join(root.path, 'Hero.stl')).writeAsString('model');
+    final result = await organizer.scan(root.path, bases.path,
+        rename: true, replace: false, remove: false);
+    expect(result.changes.length, 1);
+    expect(p.basename(result.changes.single.file.path), 'Hero.stl');
+  });
+
   test('does not overwrite an existing rename destination', () async {
     await File(p.join(root.path, 'Hero.stl')).writeAsString('old');
     await File(p.join(root.path, '_Hero.stl')).writeAsString('other');
