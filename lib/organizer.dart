@@ -63,14 +63,17 @@ class Organizer {
     await for (final e in root.list(recursive: true, followLinks: false)) {
       if (e is! File || p.extension(e.path).toLowerCase() != '.stl') continue;
       if (p.split(e.path).contains('.epic_pattern_backups')) continue;
-      if (p.isWithin(p.absolute(templatePath), p.absolute(e.path))) continue;
+      if (replace && (p.equals(p.absolute(templatePath), p.absolute(e.path)) ||
+          p.isWithin(p.absolute(templatePath), p.absolute(e.path)))) continue;
       count++;
       final name = p.basename(e.path);
       if (remove && name.toLowerCase().contains('[one piece]')) {
         changes.add(Change(e, Operation.remove, 'Mover para backup'));
       } else if (replace && name.toLowerCase().startsWith('base ') && templates.containsKey(name.toLowerCase())) {
         changes.add(Change(e, Operation.replace, 'Substituir pela base suportada', template: templates[name.toLowerCase()]));
-      } else if (rename && !name.startsWith('_')) {
+      } else if (rename && !name.startsWith('_') &&
+          RegExp(r'^\\d{4}\\s*-').hasMatch(name) &&
+          p.relative(e.path, from: rootPath).split(p.separator).length > 1) {
         final target = p.join(p.dirname(e.path), '_' + name);
         if (await File(target).exists()) {
           warnings.add('Destino já existe: ' + target);
@@ -96,13 +99,17 @@ class Organizer {
     var done = 0;
     for (final change in selected) {
       try {
-        if (!p.isWithin(p.absolute(rootPath), p.absolute(change.file.path))) {
+        if (!p.isWithin(p.absolute(rootPath), p.absolute(change.file.path)) ||
+            p.split(change.file.path).contains('.epic_pattern_backups')) {
           throw StateError('Arquivo fora da coleção');
         }
         if (!await change.file.exists()) throw StateError('Arquivo não existe mais');
         if (change.operation == Operation.rename) {
           final target = change.destination;
-          if (target == null || await File(target).exists()) throw StateError('Destino indisponível');
+          if (target == null ||
+              p.dirname(p.absolute(target)) != p.dirname(p.absolute(change.file.path)) ||
+              p.basename(target) != '_' + p.basename(change.file.path) ||
+              await File(target).exists()) throw StateError('Destino indisponível');
           await change.file.rename(target);
         } else {
           final relative = p.relative(change.file.path, from: rootPath);
@@ -118,7 +125,11 @@ class Organizer {
             await change.file.delete();
           } else {
             final source = change.template;
-            if (source == null || !await source.exists()) throw StateError('Template não encontrado');
+            if (source == null || !await source.exists() ||
+                p.basename(source.path).toLowerCase() != p.basename(change.file.path).toLowerCase() ||
+                !p.basename(change.file.path).toLowerCase().startsWith('base ')) {
+              throw StateError('Template não encontrado ou não corresponde ao original');
+            }
             final temp = File(change.file.path + '.epic-tmp');
             if (await temp.exists()) throw StateError('Temporário já existe');
             try {
