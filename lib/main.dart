@@ -52,7 +52,8 @@ class _OrganizerPageState extends State<OrganizerPage> {
     if (path == null) return;
     setState(() {
       rootController.text = path;
-      basesController.text = p.join(path, 'Bases');
+      // A pasta com bases suportadas é independente da pasta da coleção.
+      // Nunca presumir que ela esteja na subpasta 'Bases'.
       report = null;
     });
   }
