@@ -29,6 +29,11 @@ jobs:
       - name: Generate Windows runner
         run: flutter create --platforms=windows --project-name epic_pattern .
 
+      - name: Remove generated template widget test
+        shell: pwsh
+        run: |
+          if (Test-Path 'test/widget_test.dart') { Remove-Item 'test/widget_test.dart' -Force }
+
       - name: Resolve dependencies
         run: flutter pub get
 
