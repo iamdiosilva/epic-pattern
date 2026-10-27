@@ -43,3 +43,14 @@ A prévia é obrigatória. Ao executar, o programa move arquivos substituídos e
 4. Somente arquivos cujo nome começa com `[One Piece]` (sem diferenciar maiúsculas/minúsculas) são movidos para backup e retirados da coleção. Uma ocorrência no meio do nome não aciona remoção.
 
 Execute primeiro com uma **cópia** da coleção: o aplicativo ainda está em desenvolvimento e não foi validado em um ambiente Windows real.
+
+## Baixar executável Windows
+
+O workflow [Build Windows EXE](https://github.com/iamdiosilva/epic-pattern/actions/workflows/build-windows.yml) compila o projeto em um runner Windows, executa análise e testes e gera `Epic-STL-Organizer-Windows.zip`.
+
+1. Abra **Actions > Build Windows EXE**.
+2. Abra a execução bem-sucedida mais recente (ícone verde).
+3. Em **Artifacts**, baixe **Epic-STL-Organizer-Windows**.
+4. Extraia o ZIP inteiro; execute `epic_pattern.exe` dentro da pasta extraída.
+
+Atenção: o ZIP contém o executável **e suas dependências**; copiar apenas o `.exe` pode impedir que o programa abra. Se o workflow falhar, consulte seus logs; o aplicativo não deve ser considerado compilado até haver uma execução verde.
