@@ -1,0 +1,19 @@
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+coverage/
+*.iml
+.idea/
+.vscode/
+
+# Generated Windows runner (regenerated using flutter create --platforms=windows .)
+# Deliberately not ignored, can be committed after generation.
+
+# Local STL files and backups
+*.stl
+.epic_pattern_backups/
