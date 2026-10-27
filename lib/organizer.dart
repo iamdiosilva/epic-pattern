@@ -63,17 +63,15 @@ class Organizer {
     await for (final e in root.list(recursive: true, followLinks: false)) {
       if (e is! File || p.extension(e.path).toLowerCase() != '.stl') continue;
       if (p.split(e.path).contains('.epic_pattern_backups')) continue;
-      if (replace && (p.equals(p.absolute(templatePath), p.absolute(e.path)) ||
-          p.isWithin(p.absolute(templatePath), p.absolute(e.path)))) continue;
+      if (p.equals(p.absolute(templatePath), p.absolute(e.path)) ||
+          p.isWithin(p.absolute(templatePath), p.absolute(e.path))) continue;
       count++;
       final name = p.basename(e.path);
-      if (remove && name.toLowerCase().contains('[one piece]')) {
+      if (remove && name.toLowerCase().startsWith('[one piece]')) {
         changes.add(Change(e, Operation.remove, 'Mover para backup'));
       } else if (replace && name.toLowerCase().startsWith('base ') && templates.containsKey(name.toLowerCase())) {
         changes.add(Change(e, Operation.replace, 'Substituir pela base suportada', template: templates[name.toLowerCase()]));
-      } else if (rename && !name.startsWith('_') &&
-          RegExp(r'^\\d{4}\\s*-').hasMatch(name) &&
-          p.relative(e.path, from: rootPath).split(p.separator).length > 1) {
+      } else if (rename && !name.startsWith('_')) {
         final target = p.join(p.dirname(e.path), '_' + name);
         if (await File(target).exists()) {
           warnings.add('Destino já existe: ' + target);
@@ -104,6 +102,10 @@ class Organizer {
           throw StateError('Arquivo fora da coleção');
         }
         if (!await change.file.exists()) throw StateError('Arquivo não existe mais');
+        if (change.operation == Operation.remove &&
+            !p.basename(change.file.path).toLowerCase().startsWith('[one piece]')) {
+          throw StateError('Arquivo não corresponde à regra [One Piece]');
+        }
         if (change.operation == Operation.rename) {
           final target = change.destination;
           if (target == null ||
