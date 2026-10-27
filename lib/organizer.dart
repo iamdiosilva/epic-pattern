@@ -28,6 +28,9 @@ class ExecuteReport {
 }
 
 class Organizer {
+  String baseKey(String name) =>
+      (name.startsWith('_') ? name.substring(1) : name).toLowerCase();
+
   Future<ScanReport> scan(
     String rootPath,
     String templatePath, {
@@ -47,7 +50,7 @@ class Organizer {
         final duplicates = <String>{};
         await for (final e in dir.list(recursive: true, followLinks: false)) {
           if (e is! File || p.extension(e.path).toLowerCase() != '.stl') continue;
-          final key = p.basename(e.path).toLowerCase();
+          final key = baseKey(p.basename(e.path));
           if (templates.containsKey(key)) duplicates.add(key);
           templates[key] = e;
         }
@@ -69,8 +72,16 @@ class Organizer {
       final name = p.basename(e.path);
       if (remove && name.toLowerCase().startsWith('[one piece]')) {
         changes.add(Change(e, Operation.remove, 'Mover para backup'));
-      } else if (replace && name.toLowerCase().startsWith('base ') && templates.containsKey(name.toLowerCase())) {
-        changes.add(Change(e, Operation.replace, 'Substituir pela base suportada', template: templates[name.toLowerCase()]));
+      } else if (replace && baseKey(name).startsWith('base ') && templates.containsKey(baseKey(name))) {
+        final supported = templates[baseKey(name)]!;
+        final destination = p.join(p.dirname(e.path), p.basename(supported.path));
+        if (!p.equals(e.path, destination) && await File(destination).exists()) {
+          warnings.add('Base suportada já existe no destino: ' + destination);
+        } else {
+          changes.add(Change(e, Operation.replace,
+              'Substituir e salvar como ' + p.basename(supported.path),
+              template: supported, destination: destination));
+        }
       } else if (rename && !name.startsWith('_')) {
         final target = p.join(p.dirname(e.path), '_' + name);
         if (await File(target).exists()) {
@@ -128,9 +139,16 @@ class Organizer {
           } else {
             final source = change.template;
             if (source == null || !await source.exists() ||
-                p.basename(source.path).toLowerCase() != p.basename(change.file.path).toLowerCase() ||
-                !p.basename(change.file.path).toLowerCase().startsWith('base ')) {
+                baseKey(p.basename(source.path)) != baseKey(p.basename(change.file.path)) ||
+                !baseKey(p.basename(change.file.path)).startsWith('base ')) {
               throw StateError('Template não encontrado ou não corresponde ao original');
+            }
+            final destination = change.destination;
+            if (destination == null ||
+                p.dirname(p.absolute(destination)) != p.dirname(p.absolute(change.file.path)) ||
+                p.basename(destination) != p.basename(source.path) ||
+                (!p.equals(destination, change.file.path) && await File(destination).exists())) {
+              throw StateError('Destino de base suportada indisponível');
             }
             final temp = File(change.file.path + '.epic-tmp');
             if (await temp.exists()) throw StateError('Temporário já existe');
@@ -138,7 +156,7 @@ class Organizer {
               await source.copy(temp.path);
               if (await temp.length() != await source.length()) throw StateError('Template incompleto');
               await change.file.delete();
-              await temp.rename(change.file.path);
+              await temp.rename(destination);
             } catch (_) {
               if (await temp.exists()) await temp.delete();
               if (!await change.file.exists()) await copy.copy(change.file.path);
