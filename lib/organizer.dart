@@ -72,7 +72,7 @@ class Organizer {
       final name = p.basename(e.path);
       if (remove && name.toLowerCase().startsWith('[one piece]')) {
         changes.add(Change(e, Operation.remove, 'Mover para backup'));
-      } else if (replace && baseKey(name).startsWith('base ') && templates.containsKey(baseKey(name))) {
+      } else if (replace && !name.startsWith('_') && baseKey(name).startsWith('base ') && templates.containsKey(baseKey(name))) {
         final supported = templates[baseKey(name)]!;
         final destination = p.join(p.dirname(e.path), p.basename(supported.path));
         if (!p.equals(e.path, destination) && await File(destination).exists()) {
@@ -144,6 +144,9 @@ class Organizer {
               throw StateError('Template não encontrado ou não corresponde ao original');
             }
             final destination = change.destination;
+            if (p.basename(change.file.path).startsWith('_')) {
+              throw StateError('Base original já possui prefixo de suportada');
+            }
             if (destination == null ||
                 p.dirname(p.absolute(destination)) != p.dirname(p.absolute(change.file.path)) ||
                 p.basename(destination) != p.basename(source.path) ||
